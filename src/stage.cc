@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "stage.h"
+#include "pipe_spec.h"
 #include <array>
 #include <deque>
 
@@ -23,13 +24,13 @@ Stage::Stage(Stage *next)
 {
 	this->next = next;
 	this->curr_instr = nullptr;
-	this->status = WAIT;
+	this->status = READY;
 }
 
 Stage::~Stage() { delete this->next; };
 
 std::array<int, GPR_NUM> Stage::gprs;
-std::array<int, V_NUM> Stage::vrs;
+std::array<std::array<signed int, V_R_LIMIT>, V_NUM> Stage::vrs;
 std::deque<signed int> Stage::checked_out;
 unsigned int Stage::pc;
 Storage *Stage::storage;
@@ -45,44 +46,41 @@ InstrDTO *Stage::advance(Response p)
 	InstrDTO *s = nullptr;
 	Response n;
 
-	// std::cout << "advance: " << this->id << ": " << this->curr_instr << "?: "
-	// << p << ": " << this->checked_out.size() << ": "; if (curr_instr)
-	// 	std::cout << curr_instr->get_mnemonic();
-	// for (long unsigned int i = 0; i < this->checked_out.size(); ++i)
-	// 	std::cout << this->checked_out[i] << " ";
-	// std::cout << std::endl;
-	if (this->curr_instr && this->curr_instr->is_squashed() == 1)
+	if (this->curr_instr && this->curr_instr->is_squashed == 1)
 		this->status = OK;
 	if (this->curr_instr && this->status != OK) {
 		this->advance_helper();
 	}
-	if (this->status == OK && p == WAIT && this->curr_instr) {
+	if (this->status == OK && p == READY && this->curr_instr) {
 		// mutual consent
 		r = new InstrDTO(*this->curr_instr);
 		delete curr_instr;
 		curr_instr = nullptr;
-		this->status = WAIT;
+		this->status = READY;
 	}
 
-	n = (p != WAIT || this->status != WAIT) ? STALLED : WAIT;
+	n = (p != READY || this->status != READY) ? STALLED : READY;
 	s = this->next->advance(n);
 	if (s)
 		this->curr_instr = s;
 	return r;
 }
 
-std::vector<int> Stage::stage_info()
+bool Stage::is_vector_type(Mnemonic m)
 {
-	std::vector<int> info;
-	if (this->curr_instr) {
-		info.push_back(this->curr_instr->get_mnemonic());
-		info.push_back(this->curr_instr->is_squashed());
-		info.push_back(this->curr_instr->get_s1());
-		info.push_back(this->curr_instr->get_s2());
-		info.push_back(this->curr_instr->get_s3());
-	}
-	return info;
+	return (
+		m == ADDV || m == SUBV || m == MULV || m == DIVV || m == CEV ||
+		m == LOADV || m == STOREV);
 }
+
+bool Stage::is_logical(Mnemonic m)
+{
+	return (
+		m == ANDI || m == ORI || m == XORI || m == AND || m == OR || m == XOR ||
+		m == NOT);
+}
+
+InstrDTO *Stage::get_instr() { return this->curr_instr; }
 
 void Stage::set_condition(CC c, bool v)
 {
@@ -90,32 +88,6 @@ void Stage::set_condition(CC c, bool v)
 		this->gprs[3] = this->gprs[3] | 1 << c;
 	else
 		this->gprs[3] = this->gprs[3] & ~(1 << c);
-}
-
-signed int Stage::dereference_register(signed int v)
-{
-	signed int r;
-
-	if (v < 0 || v >= GPR_NUM + V_NUM) {
-		throw std::out_of_range(
-			"instruction tried to access register which does not exist");
-	}
-
-	r = (v >= GPR_NUM) ? this->vrs[v % GPR_NUM] : this->gprs[v];
-	return r;
-}
-
-void Stage::store_register(signed int v, signed int d)
-{
-	if (v < 0 || v >= GPR_NUM + V_NUM) {
-		throw std::out_of_range(
-			"instruction tried to access register which does not exist");
-	}
-
-	if (v >= GPR_NUM)
-		this->vrs[v % GPR_NUM] = d;
-	else
-		this->gprs[v] = d;
 }
 
 bool Stage::is_checked_out(signed int r)
@@ -127,7 +99,7 @@ bool Stage::is_checked_out(signed int r)
 void Stage::squash()
 {
 	if (curr_instr) {
-		this->curr_instr->squash();
+		this->curr_instr->is_squashed = 1;
 		this->status = OK;
 	}
 	if (this->next) {

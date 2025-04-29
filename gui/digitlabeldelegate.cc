@@ -15,34 +15,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "digitlabel.h"
+#include "digitlabeldelegate.h"
 #include "util.h"
-#include "gui.h"
+#include <QString>
 
-DigitLabel::DigitLabel(QWidget *parent) : QLabel(parent) { setText(QString()); }
-
-void DigitLabel::clear()
+void DigitLabelDelegate::set_hex_display(bool hex)
 {
-	this->is_cleared = true;
-	setText(QString());
+	if (this->is_hex != hex) {
+		this->is_hex = hex;
+		if (auto v = qobject_cast<QAbstractItemView *>(parent()))
+			v->viewport()->update();
+	}
 }
 
-void DigitLabel::set_value(int v)
+void DigitLabelDelegate::paint(
+	QPainter *painter,
+	const QStyleOptionViewItem &option,
+	const QModelIndex &index) const
 {
-	this->is_cleared = false;
-	this->v = v;
-	update_display();
-}
-
-void DigitLabel::on_hex_toggle(bool is_hex)
-{
-	this->is_hex = is_hex;
-	update_display();
-}
-
-void DigitLabel::update_display()
-{
+	int v;
 	QString t;
-	t = format_toggled_value(this->v, this->is_hex, this->is_cleared);
-	setText(t);
+	QStyleOptionViewItem o;
+	QStyle *s;
+	QVariant a;
+	bool e;
+
+	a = index.data(Qt::DisplayRole);
+	v = a.toInt();
+	e = a.isNull();
+	t = format_toggled_value(v, this->is_hex, e);
+
+	o = option;
+	initStyleOption(&o, index);
+	o.text = t;
+
+	const QWidget *w = option.widget;
+	s = w ? w->style() : QApplication::style();
+	s->drawControl(QStyle::CE_ItemViewItem, &o, painter, w);
 }

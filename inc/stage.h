@@ -17,7 +17,6 @@
 
 #ifndef STAGE_H
 #define STAGE_H
-#include "accessor.h"
 #include "instrDTO.h"
 #include "pipe_spec.h"
 #include "response.h"
@@ -51,11 +50,17 @@ class Stage
 	 * ready to accept a new instruction object next cycle.
 	 * @return a DTO object containing the next instruction to be processed.
 	 *
-	 * Must set the status to WAIT when the current instruction is evicted..
+	 * Must set the status to READY when the current instruction is evicted..
 	 */
 	virtual InstrDTO *advance(Response p);
-
-	virtual std::vector<int> stage_info();
+	/**
+	 * @return the current instruction.
+	 */
+	InstrDTO *get_instr();
+	/**
+	 * Squashes the pipeline.
+	 */
+	void squash();
 
 	/* The following methods are made public so that they may be tested, and are
 	 * not to be called from outside classes during standard execution.
@@ -74,14 +79,13 @@ class Stage
 	void set_condition(CC c, bool v);
 
 	/**
-	 * Squashes the pipeline.
-	 */
-	void squash();
-
-	/**
 	 * The set of registers currently checked out.
 	 */
 	static std::deque<signed int> checked_out;
+
+	bool is_vector_type(Mnemonic m);
+
+	bool is_logical(Mnemonic m);
 
   protected:
 	/**
@@ -104,17 +108,43 @@ class Stage
 	 * @param the register number.
 	 * @param the value to store.
 	 */
-	void store_register(signed int v, signed int d);
+	template <typename T>
+	void store_register(signed int v, T d)
+	{
+		if constexpr (std::is_same_v<T, signed int>) {
+			if (v < 0 || v >= GPR_NUM) {
+				throw std::out_of_range("Invalid GPR index for storing scalar");
+			}
+			gprs[v] = d;
+		}
+		else if constexpr (std::is_same_v<T, std::array<signed int, V_R_LIMIT>>) {
+			if (v < GPR_NUM || v >= GPR_NUM + V_NUM) {
+				throw std::out_of_range("Invalid VR index for storing vector");
+			}
+			vrs[v % GPR_NUM] = d;
+		}
+	}
 	/**
 	 * Returns the value of the register corresponding to `v`.
 	 * @param the register number.
 	 * @return the value in the associated register.
 	 */
-	signed int dereference_register(signed int v);
-	/**
-	 * The name of the pipeline stage.
-	 */
-	Accessor id;
+	template <typename T>
+	T dereference_register(signed int v)
+	{
+		if constexpr (std::is_same_v<T, signed int>) {
+			if (v < 0 || v >= GPR_NUM) {
+				throw std::out_of_range("Invalid GPR index");
+			}
+			return gprs[v];
+		}
+		else if constexpr (std::is_same_v<T, std::array<signed int, V_R_LIMIT>>) {
+			if (v < GPR_NUM || v >= GPR_NUM + V_NUM) {
+				throw std::out_of_range("Invalid vector register index");
+			}
+			return vrs[v % GPR_NUM];
+		}
+	}
 	/**
 	 * The shared pool of general-purpose integer registers.
 	 */
@@ -122,7 +152,7 @@ class Stage
 	/**
 	 * The shared pool of general-purpose vector registers.
 	 */
-	static std::array<signed int, V_NUM> vrs;
+	static std::array<std::array<signed int, V_R_LIMIT>, V_NUM> vrs;
 	/**
 	 * The address of the currently executing instruction.
 	 */

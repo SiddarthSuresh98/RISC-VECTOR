@@ -27,15 +27,15 @@ class EXFixture
 	execute_instr(signed int s1, signed int s2, signed int s3, Mnemonic m)
 	{
 		InstrDTO *i = new InstrDTO();
-		i->set_s1(s1);
-		i->set_s2(s2);
-		i->set_s3(s3);
-		i->set_mnemonic(m);
+		i->operands.integer.slot_one = s1;
+		i->operands.integer.slot_two = s2;
+		i->operands.integer.slot_three = s3;
+		i->mnemonic = m;
 		this->dum->set_curr_instr(i);
 
-		i = this->ct->advance(WAIT);
+		i = this->ct->advance(READY);
 		REQUIRE(i == nullptr);
-		i = this->ct->advance(WAIT);
+		i = this->ct->advance(READY);
 		REQUIRE(i != nullptr);
 
 		return i;
@@ -57,20 +57,46 @@ TEST_CASE_METHOD(EXFixture, "ADD within bounds", "[ex]")
 	s1 = 42000, s2 = -41958, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "ADD overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "ADD overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "ADD underflow", "[ex]")
-// {
-// }
+	m = ADD;
+	s1 = MAX_INT, s2 = 1, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == -(MAX_INT)-1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "ADD underflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
+
+	m = ADD;
+	s1 = -(MAX_INT)-1, s2 = -1, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == MAX_INT);
+	CHECK(!ct->get_condition(OF));
+	CHECK(ct->get_condition(UF));
+
+	delete i;
+}
 
 TEST_CASE_METHOD(EXFixture, "SUB within bounds", "[ex]")
 {
@@ -82,20 +108,46 @@ TEST_CASE_METHOD(EXFixture, "SUB within bounds", "[ex]")
 	s1 = 200, s2 = 131, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 69);
+	CHECK(i->operands.integer.slot_one == 69);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "SUB overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "SUB overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "SUB underflow", "[ex]")
-// {
-// }
+	m = SUB;
+	s1 = MAX_INT, s2 = -1, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == -(MAX_INT)-1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "SUB underflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
+
+	m = SUB;
+	s1 = -(MAX_INT)-1, s2 = 1, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == MAX_INT);
+	CHECK(!ct->get_condition(OF));
+	CHECK(ct->get_condition(UF));
+
+	delete i;
+}
 
 TEST_CASE_METHOD(EXFixture, "MUL within bounds", "[ex]")
 {
@@ -107,20 +159,46 @@ TEST_CASE_METHOD(EXFixture, "MUL within bounds", "[ex]")
 	s1 = 200, s2 = 200, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 40000);
+	CHECK(i->operands.integer.slot_one == 40000);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "MUL overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "MUL overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "MUL underflow", "[ex]")
-// {
-// }
+	m = MUL;
+	s1 = MAX_INT, s2 = MAX_INT, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == 1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "MUL underflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
+
+	m = MUL;
+	s1 = MAX_INT, s2 = -MAX_INT, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == -1);
+	CHECK(!ct->get_condition(OF));
+	CHECK(ct->get_condition(UF));
+
+	delete i;
+}
 
 TEST_CASE_METHOD(EXFixture, "QUOT within bounds", "[ex]")
 {
@@ -132,24 +210,43 @@ TEST_CASE_METHOD(EXFixture, "QUOT within bounds", "[ex]")
 	s1 = 2043, s2 = 40, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 51);
+	CHECK(i->operands.integer.slot_one == 51);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "QUOT overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "QUOT overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "QUOT underflow", "[ex]")
-// {
-// }
+	m = QUOT;
+	s1 = -(MAX_INT)-1, s2 = -1, s3 = 0;
+	i = execute_instr(s1, s2, s3, m);
 
-// TEST_CASE_METHOD(EXFixture, "QUOT halt", "[ex]")
-// {
-// }
+	CHECK(i->operands.integer.slot_one == -(MAX_INT)-1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "QUOT halt", "[ex]")
+{
+	try {
+		signed int s1, s2, s3;
+		Mnemonic m;
+
+		m = QUOT;
+		s1 = 1, s2 = 0, s3 = 0;
+		execute_instr(s1, s2, s3, m);
+		FAIL(true);
+	} catch (HaltException &e) {
+	}
+}
 
 TEST_CASE_METHOD(EXFixture, "REM within bounds", "[ex]")
 {
@@ -161,24 +258,26 @@ TEST_CASE_METHOD(EXFixture, "REM within bounds", "[ex]")
 	s1 = 2043, s2 = 40, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 3);
+	CHECK(i->operands.integer.slot_one == 3);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "REM overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "REM halt", "[ex]")
+{
+	try {
+		signed int s1, s2, s3;
+		Mnemonic m;
 
-// TEST_CASE_METHOD(EXFixture, "REM underflow", "[ex]")
-// {
-// }
-
-// TEST_CASE_METHOD(EXFixture, "REM halt", "[ex]")
-// {
-// }
+		m = REM;
+		s1 = 1, s2 = 0, s3 = 0;
+		execute_instr(s1, s2, s3, m);
+		FAIL(true);
+	} catch (HaltException &e) {
+	}
+}
 
 TEST_CASE_METHOD(EXFixture, "SFTR within bounds", "[ex]")
 {
@@ -190,7 +289,7 @@ TEST_CASE_METHOD(EXFixture, "SFTR within bounds", "[ex]")
 	s1 = 1300, s2 = 6, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 20);
+	CHECK(i->operands.integer.slot_one == 20);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -215,7 +314,7 @@ TEST_CASE_METHOD(EXFixture, "SFTL within bounds", "[ex]")
 	s1 = 13, s2 = 6, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 832);
+	CHECK(i->operands.integer.slot_one == 832);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -240,7 +339,7 @@ TEST_CASE_METHOD(EXFixture, "AND", "[ex]")
 	s1 = 1234, s2 = 5678, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 1026);
+	CHECK(i->operands.integer.slot_one == 1026);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -257,7 +356,7 @@ TEST_CASE_METHOD(EXFixture, "OR", "[ex]")
 	s1 = 1234, s2 = 5678, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 5886);
+	CHECK(i->operands.integer.slot_one == 5886);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -274,7 +373,7 @@ TEST_CASE_METHOD(EXFixture, "NOT", "[ex]")
 	s1 = 1234, s2 = -1, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == -1235);
+	CHECK(i->operands.integer.slot_one == -1235);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -291,7 +390,7 @@ TEST_CASE_METHOD(EXFixture, "XOR", "[ex]")
 	s1 = 1234, s2 = 5678, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 4860);
+	CHECK(i->operands.integer.slot_one == 4860);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -357,7 +456,7 @@ TEST_CASE_METHOD(EXFixture, "CMP less", "[ex]")
 	i = execute_instr(s1, s2, s3, m);
 
 	// should not be changed
-	CHECK(i->get_s1() == -1);
+	CHECK(i->operands.integer.slot_one == -1);
 
 	CHECK(!ct->get_condition(EQ));
 	CHECK(!ct->get_condition(GT));
@@ -378,7 +477,7 @@ TEST_CASE_METHOD(EXFixture, "CMP equal", "[ex]")
 	i = execute_instr(s1, s2, s3, m);
 
 	// should not be changed
-	CHECK(i->get_s1() == 20);
+	CHECK(i->operands.integer.slot_one == 20);
 
 	CHECK(ct->get_condition(EQ));
 	CHECK(!ct->get_condition(GT));
@@ -399,7 +498,7 @@ TEST_CASE_METHOD(EXFixture, "CMP greater", "[ex]")
 	i = execute_instr(s1, s2, s3, m);
 
 	// should not be changed
-	CHECK(i->get_s1() == 21);
+	CHECK(i->operands.integer.slot_one == 21);
 
 	CHECK(!ct->get_condition(EQ));
 	CHECK(ct->get_condition(GT));
@@ -432,7 +531,7 @@ TEST_CASE_METHOD(EXFixture, "LOAD", "[ex]")
 	s3 = -41958;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -454,20 +553,46 @@ TEST_CASE_METHOD(EXFixture, "ADDI within bounds", "[ex]")
 	s3 = -41958;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "ADDI overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "ADDI overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "ADDI underflow", "[ex]")
-// {
-// }
+	m = ADDI;
+	s1 = MAX_INT, s2 = 0, s3 = 1;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == -(MAX_INT)-1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "ADDI underflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
+
+	m = ADDI;
+	s1 = -(MAX_INT)-1, s2 = 0, s3 = -1;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == MAX_INT);
+	CHECK(!ct->get_condition(OF));
+	CHECK(ct->get_condition(UF));
+
+	delete i;
+}
 
 TEST_CASE_METHOD(EXFixture, "SUBI within bounds", "[ex]")
 {
@@ -479,20 +604,46 @@ TEST_CASE_METHOD(EXFixture, "SUBI within bounds", "[ex]")
 	s1 = 200, s2 = 0, s3 = 131;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 69);
+	CHECK(i->operands.integer.slot_one == 69);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
 	delete i;
 }
 
-// TEST_CASE_METHOD(EXFixture, "SUBI overflow", "[ex]")
-// {
-// }
+TEST_CASE_METHOD(EXFixture, "SUBI overflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
 
-// TEST_CASE_METHOD(EXFixture, "SUBI underflow", "[ex]")
-// {
-// }
+	m = SUBI;
+	s1 = -(MAX_INT)-1, s2 = 0, s3 = 1;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == MAX_INT);
+	CHECK(!ct->get_condition(OF));
+	CHECK(ct->get_condition(UF));
+
+	delete i;
+}
+
+TEST_CASE_METHOD(EXFixture, "SUBI underflow", "[ex]")
+{
+	signed int s1, s2, s3;
+	Mnemonic m;
+	InstrDTO *i;
+
+	m = SUBI;
+	s1 = MAX_INT, s2 = 0, s3 = -1;
+	i = execute_instr(s1, s2, s3, m);
+
+	CHECK(i->operands.integer.slot_one == -(MAX_INT)-1);
+	CHECK(ct->get_condition(OF));
+	CHECK(!ct->get_condition(UF));
+
+	delete i;
+}
 
 TEST_CASE_METHOD(EXFixture, "SFTRI within bounds", "[ex]")
 {
@@ -504,7 +655,7 @@ TEST_CASE_METHOD(EXFixture, "SFTRI within bounds", "[ex]")
 	s1 = 1300, s2 = 0, s3 = 6;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 20);
+	CHECK(i->operands.integer.slot_one == 20);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -529,7 +680,7 @@ TEST_CASE_METHOD(EXFixture, "SFTLI within bounds", "[ex]")
 	s1 = 13, s2 = 0, s3 = 6;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 832);
+	CHECK(i->operands.integer.slot_one == 832);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -554,7 +705,7 @@ TEST_CASE_METHOD(EXFixture, "ANDI", "[ex]")
 	s1 = 1234, s2 = 0, s3 = 5678;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 1026);
+	CHECK(i->operands.integer.slot_one == 1026);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -571,7 +722,7 @@ TEST_CASE_METHOD(EXFixture, "ORI", "[ex]")
 	s1 = 1234, s2 = 0, s3 = 5678;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 5886);
+	CHECK(i->operands.integer.slot_one == 5886);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -588,7 +739,7 @@ TEST_CASE_METHOD(EXFixture, "XORI", "[ex]")
 	s1 = 1234, s2 = 0, s3 = 5678;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 4860);
+	CHECK(i->operands.integer.slot_one == 4860);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -605,7 +756,7 @@ TEST_CASE_METHOD(EXFixture, "STORE", "[ex]")
 	s1 = 42000, s2 = 0, s3 = -41958;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -626,7 +777,7 @@ TEST_CASE_METHOD(EXFixture, "JMP", "[ex]")
 	s1 = 42000, s2 = -41958, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -643,7 +794,7 @@ TEST_CASE_METHOD(EXFixture, "JRL", "[ex]")
 	s1 = 100, s2 = 69, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 69);
+	CHECK(i->operands.integer.slot_one == 69);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -660,7 +811,7 @@ TEST_CASE_METHOD(EXFixture, "JAL", "[ex]")
 	s1 = 42000, s2 = -41958, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 42);
+	CHECK(i->operands.integer.slot_one == 42);
 	CHECK(!ct->get_condition(OF));
 	CHECK(!ct->get_condition(UF));
 
@@ -677,7 +828,7 @@ TEST_CASE_METHOD(EXFixture, "BEQ no cond", "[ex]")
 	s1 = 100, s2 = 50, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == -1);
+	CHECK(i->operands.integer.slot_one == -1);
 
 	delete i;
 }
@@ -693,7 +844,7 @@ TEST_CASE_METHOD(EXFixture, "BEQ", "[ex]")
 	this->ct->set_condition(EQ, true);
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 50);
+	CHECK(i->operands.integer.slot_one == 50);
 
 	delete i;
 }
@@ -708,7 +859,7 @@ TEST_CASE_METHOD(EXFixture, "BGT no cond", "[ex]")
 	s1 = 100, s2 = 50, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == -1);
+	CHECK(i->operands.integer.slot_one == -1);
 
 	delete i;
 }
@@ -724,7 +875,7 @@ TEST_CASE_METHOD(EXFixture, "BGT", "[ex]")
 	this->ct->set_condition(GT, true);
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 50);
+	CHECK(i->operands.integer.slot_one == 50);
 
 	delete i;
 }
@@ -739,7 +890,7 @@ TEST_CASE_METHOD(EXFixture, "BUF no cond", "[ex]")
 	s1 = 100, s2 = -42027, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == -1);
+	CHECK(i->operands.integer.slot_one == -1);
 
 	delete i;
 }
@@ -755,7 +906,7 @@ TEST_CASE_METHOD(EXFixture, "BUF", "[ex]")
 	this->ct->set_condition(UF, true);
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 50);
+	CHECK(i->operands.integer.slot_one == 50);
 
 	delete i;
 }
@@ -770,7 +921,7 @@ TEST_CASE_METHOD(EXFixture, "BOF no cond", "[ex]")
 	s1 = 100, s2 = -42027, s3 = 0;
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == -1);
+	CHECK(i->operands.integer.slot_one == -1);
 
 	delete i;
 }
@@ -786,7 +937,7 @@ TEST_CASE_METHOD(EXFixture, "BOF", "[ex]")
 	this->ct->set_condition(OF, true);
 	i = execute_instr(s1, s2, s3, m);
 
-	CHECK(i->get_s1() == 50);
+	CHECK(i->operands.integer.slot_one == 50);
 
 	delete i;
 }

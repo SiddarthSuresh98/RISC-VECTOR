@@ -17,133 +17,54 @@
 
 #ifndef INSTRDTO_H
 #define INSTRDTO_H
-#include "accessor.h"
 #include "instr.h"
-#include <functional>
-#include <string>
-#include <unordered_map>
+#include "pipe_spec.h"
+#include<array>
 
-class InstrDTO
-{
-  public:
-	/**
-	 * Constructor.
-	 */
-	InstrDTO();
-	~InstrDTO() = default;
+struct U_INT_TYPE {
+	signed int slot_one;
+	signed int slot_two;
+	signed int slot_three;
+};
 
-	int get_id_cycle();
-	/**
-	 * @return instr_bits
-	 */
-	signed int get_instr_bits();
-	/**
-	 * @return checked_out
-	 */
-	signed int get_checked_out();
-	/**
-	 * @return s1
-	 */
-	signed int get_s1();
-	/**
-	 * @return s2
-	 */
-	signed int get_s2();
-	/**
-	 * @return s3
-	 */
-	signed int get_s3();
-	/**
-	 * @return the mnemonic of the instruction
-	 */
-	Mnemonic get_mnemonic();
-	/**
-	 * @return the type of the instruction
-	 */
-	Type get_type();
-	/**
-	 * @return the program counter at the time this instruction was fetched
-	 */
-	unsigned int get_pc();
-	/**
-	 * @return 1 if this instruction is invalid, 0 otherwise
-	 */
-	int is_squashed();
+struct V_TYPE {
+	std::array<signed int, V_R_LIMIT> slot_one;
+	std::array<signed int, V_R_LIMIT> slot_two;
+	std::array<signed int, V_R_LIMIT> slot_three;
+};
 
-	/**
-	 * @param instr_bits
-	 */
-	void set_instr_bits(signed int);
-	/**
-	 * @param checked_out
-	 */
-	void set_checked_out(signed int);
-	/**
-	 * @param s1
-	 */
-	void set_s1(signed int);
-	/**
-	 * @param s2
-	 */
-	void set_s2(signed int);
-	/**
-	 * @param s3
-	 */
-	void set_s3(signed int);
-	/**
-	 * @param the mnemonic of the instruction
-	 */
-	void set_mnemonic(Mnemonic);
+struct LOAD_STORE_V_TYPE{
+	signed int base_addr;
+	signed int immediate;
+	std::array<signed int, V_R_LIMIT> vector_register;
+};
 
+struct InstrDTO {
 	/**
-	 * @param the type of the instruction
+	 * If this instruction is squashed or not.
 	 */
-	void set_type(Type);
+	unsigned int is_squashed : 1;
 	/**
-	 * @param the program counter at the time this instruction was fetched
+	 * Optional slot for holding the Instruction Bits
 	 */
-	void set_pc(unsigned int pc);
+	signed int slot_A;
 	/**
-	 * squashes this instruction
+	 * Optional slot for holding PC
 	 */
-	void squash();
-
-  private:
+	signed int slot_B;
 	/**
-	 * The raw bits encoding the instruction.
-	 */
-	signed int instr_bits;
-	/**
-	 * The register, if any, this instruction has checked out. A checked out
-	 * register cannot be checked out by another register. This prevents RAW
-	 * conflicts.
-	 */
-	signed int checked_out;
-	/**
-	 * Slots in this instruction, for storing temporary registers, immediates,
-	 * or other.
-	 * Some instruction types may use these differently.
-	 * The `oper` function is in charge of knowing how to parse these.
-	 */
-	signed int s1;
-	signed int s2;
-	signed int s3;
-	/**
-	 * The mnemonic of the operation.
+	 * The mnemonic of the instruction.
 	 */
 	Mnemonic mnemonic;
 	/**
-	 * Type of the instruction
+	 * The register this instruction checks out.
 	 */
-	Type type;
-	/**
-	 * The PC of the instruction
-	 */
-	unsigned int pc;
-	/**
-	 * If this instruction was made dead
-	 */
-	unsigned int squashed;
+	signed int checked_out;
+	union {
+		struct U_INT_TYPE integer;
+		struct V_TYPE vector;
+		struct LOAD_STORE_V_TYPE load_store_vector;
+	} operands;
 };
 
 #endif /* INSTRDTO_H_INCLUDED */

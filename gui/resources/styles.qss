@@ -4,6 +4,8 @@
     color: "#00cc00";
     background-color: "#000200";
     border: 0px solid "#000200";
+    selection-background-color: "#00cc00";
+    selection-color: "#000200";
 }
 
 QStatusBar {
@@ -50,15 +52,87 @@ QGroupBox::title {
 QLabel {
 }
 
-/* text entry */
-QLineEdit {
-    font-size: 18pt;
-    border-radius: 0px;
-    padding: 0 4px;
-    selection-background-color: "#00cc00";
+QSpinBox {
+    padding-right: 15px; /* make room for the arrows */
+    border: none;
 }
 
-QTextEdit, QListView {
+QSpinBox::up-button {
+    color: "#000200";
+    background-color: "#00cc00";
+    subcontrol-origin: border;
+    subcontrol-position: top right; /* position at the top right corner */
+
+    width: 16px;
+    border: none;
+    subcontrol-origin: border;
+}
+
+QSpinBox::up-arrow {
+    image: url(:/resources/arrow_up.png);
+    width: 7px;
+    height: 7px;
+}
+
+QSpinBox::up-arrow:pressed {
+    image: url(:/resources/arrow_up_pressed.png);
+    width: 7px;
+    height: 7px;
+}
+
+QSpinBox::up-button:pressed {
+    color: "#00cc00";
+    background-color: "#000200";
+}
+
+QSpinBox::down-button {
+    color: "#000200";
+    background-color: "#00cc00";
+    subcontrol-origin: border;
+    subcontrol-position: bottom right; /* position at bottom right corner */
+
+    width: 16px;
+    border: none;
+}
+
+QSpinBox::down-button:pressed {
+    color: "#00cc00";
+    background-color: "#000200";
+}
+
+QSpinBox::down-arrow {
+    image: url(:/resources/arrow_down.png);
+    width: 7px;
+    height: 7px;
+}
+
+QSpinBox::down-arrow:pressed {
+    image: url(:/resources/arrow_down_pressed.png);
+    width: 7px;
+    height: 7px;
+}
+
+QTableView {
+    border: 0px;
+    selection-background-color: transparent;
+    selection-color: black;
+    outline: none;
+}
+
+QTableView::item {
+    border: none;
+    padding: 4px;
+}
+
+QHeaderView::section {
+    color: "#00cc00";
+    background-color: "#000200";
+    border: none;
+}
+
+QTableView QTableCornerButton::section {
+    background-color: "#000200";
+    border: none;
 }
 
 QPushButton {
@@ -71,8 +145,8 @@ QPushButton {
 
 QPushButton:pressed {
     color: "#00cc00";
-    background-color: "#000200";
-}
+    background-color: "#000200";}
+
 
 QPushButton:flat {
     border: none; /* no border for a flat push button */

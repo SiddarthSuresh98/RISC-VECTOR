@@ -15,31 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DUM_H
-#define DUM_H
-#include "instrDTO.h"
-#include "response.h"
-#include "stage.h"
+#ifndef CACHEWAYSSELECTOR_H
+#define CACHEWAYSSELECTOR_H
 
-/**
- * Don't underestimate mocks (the DUM pipe stage).
- */
-class DUM : public Stage
+#include <QSpinBox>
+#include <QWidget>
+
+class CacheWaysSelector : public QWidget
 {
+	Q_OBJECT
+
   public:
 	/**
 	 * Constructor.
-	 * @param The next stage in the pipeline.
-	 * @return A newly allocated DUM object.
+	 * This class provides a simple group of labeled spinboxs meant for
+	 * selecting cache ways.
+	 * @param The parent widget.
+	 * @param a newly allocated CacheWaysSelector
 	 */
-	DUM(Stage *next);
+	explicit CacheWaysSelector(QWidget *parent = nullptr);
 
-	InstrDTO *advance(Response p) override;
-
-	void set_curr_instr(InstrDTO *);
+	/**
+	 * @return the values in the spinboxes.
+	 */
+	QList<int> values() const;
 
   private:
-	void advance_helper() override;
+	/**
+	 * A list of spinboxes.
+	 */
+	QList<QSpinBox *> sbs;
 };
 
-#endif /* DUM_H_INCLUDED */
+#endif // CACHEWAYSSELECTOR_H
