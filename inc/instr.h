@@ -37,8 +37,10 @@ enum Mnemonic {
 	DIVV,
 	CMP,
 	CEV,
+	SRDL,
+	SRDS,
+	ROTV,
 	LOAD,
-	LOADV,
 	ADDI,
 	SUBI,
 	SFTRI,
@@ -47,7 +49,6 @@ enum Mnemonic {
 	ORI,
 	XORI,
 	STORE,
-	STOREV,
 	JMP,
 	JRL,
 	JAL,
@@ -61,9 +62,20 @@ enum Mnemonic {
 	NOP,
 };
 
+enum FieldType {
+	SI_INT,
+	R_VECT,
+	S_VECT,
+};
+
 namespace instr
 {
 extern const std::unordered_map<unsigned int, Mnemonic> mnemonic_map;
+/**
+ * @param a mnemonic
+ * @return an enum representing the types of the decoded instruction fields.
+ */
+FieldType get_field_types(Mnemonic m);
 } // namespace instr
 
 #endif /* INSTR_H_INCLUDED */

@@ -32,10 +32,11 @@ Controller::Controller(Stage *stage, Storage *storage, bool is_pipelined)
 	this->checked_out = {};
 	this->gprs = {0};
 	this->vrs.fill({0});
+	this->vrs.at(0).fill(1);      // constant 1 vector register
 	this->gprs.at(2) = MEM_WORDS; // set the stack pointer
 }
 
-void Controller::run_for(int number)
+void Controller::run_for(long number)
 {
 	int i;
 	for (i = 0; i < number; ++i) {

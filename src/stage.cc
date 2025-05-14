@@ -59,25 +59,16 @@ InstrDTO *Stage::advance(Response p)
 		this->status = READY;
 	}
 
-	n = (p != READY || this->status != READY) ? STALLED : READY;
+	if (!this->curr_instr)
+		n = READY;
+	else
+		n = (p != READY || this->status != READY) ? STALLED : READY;
+
 	s = this->next->advance(n);
-	if (s)
+	if (s) {
 		this->curr_instr = s;
+	}
 	return r;
-}
-
-bool Stage::is_vector_type(Mnemonic m)
-{
-	return (
-		m == ADDV || m == SUBV || m == MULV || m == DIVV || m == CEV ||
-		m == LOADV || m == STOREV);
-}
-
-bool Stage::is_logical(Mnemonic m)
-{
-	return (
-		m == ANDI || m == ORI || m == XORI || m == AND || m == OR || m == XOR ||
-		m == NOT);
 }
 
 InstrDTO *Stage::get_instr() { return this->curr_instr; }
