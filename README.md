@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-This is a ISA simulator for a mini-ISA including vector support.
+This is a ISA simulator for a mini-ISA including vector support. Please find the documentation PDF file as "RISC V[ECTOR] final"
 
 - cmake
 - g++ (GCC) 11.4.0
